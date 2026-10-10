@@ -100,6 +100,7 @@ dialog::backdrop{background:#000000b3}
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')}</script>
 <script>
 // === INSTELLEN: vul jouw Supabase-gegevens in (Project Settings > API) ===
 const SUPABASE_URL = 'https://kigjqasrizifysxpfvip.supabase.co';
@@ -114,6 +115,10 @@ const fmt = d => new Date(d).toLocaleDateString('nl-NL', {day:'numeric', month:'
 if (SUPABASE_URL.startsWith('JOUW')) {
   $('#view').innerHTML = '<div class="notice"><b>Bijna klaar.</b> Vul bovenaan in index.html je Supabase-URL en sleutel in (zie de uitleg).</div>';
   throw new Error('Supabase niet ingesteld');
+}
+if (!window.supabase) {
+  $('#view').innerHTML = '<div class="notice"><b>De site kon een onderdeel niet laden.</b><br>Zet je adblocker of Brave Shields uit voor deze site en druk op Ctrl+Shift+R.</div>';
+  throw new Error('supabase-js niet geladen');
 }
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let user = null, me = null, tab = 'portfolio', projects = [], favs = new Set(), unread = 0, newReq = 0, counts = {}, settings = {};
@@ -131,6 +136,7 @@ const canAdd = () => me && (me.is_owner || me.can_add);
 const canFil = () => me && (me.is_owner || me.can_filament);
 
 async function load() {
+ try {
   const { data: { session } } = await sb.auth.getSession();
   user = session?.user || null; me = null; favs = new Set();
   if (user) {
@@ -145,6 +151,9 @@ async function load() {
   ((await sb.from('site_settings').select('*')).data || []).forEach(r => settings[r.key] = r.value);
   newReq = me?.is_owner ? ((await sb.from('requests').select('id', { count: 'exact', head: true }).eq('status', 'nieuw')).count || 0) : 0;
   render();
+ } catch (e) {
+  $('#view').innerHTML = `<div class="notice"><b>Er ging iets mis bij het laden.</b><br>${esc(e.message)}<br>Probeer Ctrl+Shift+R, of zet je adblocker of Brave Shields uit voor deze site.</div>`;
+ }
 }
 sb.auth.onAuthStateChange(() => load());
 
