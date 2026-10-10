@@ -423,7 +423,7 @@ $('#auth').onsubmit = async e => {
   e.preventDefault();
   const email = $('#email').value, password = $('#pw').value;
   const { error, data } = reg
-    ? await sb.auth.signUp({ email, password, options: { data: { name: $('#name').value } } })
+    ? await sb.auth.signUp({ email, password, options: { data: { name: $('#name').value }, emailRedirectTo: location.origin + location.pathname } })
     : await sb.auth.signInWithPassword({ email, password });
   if (error) return toast(error.message);
   if (reg && !data.session) toast('Check je e-mail om je account te bevestigen');
