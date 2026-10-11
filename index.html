@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
 <title>Sven3Dprint</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
@@ -86,6 +87,7 @@ dialog::backdrop{background:#000000b3}
   <nav id="nav"></nav>
 </div></header>
 <main id="view"><p class="empty">Laden…</p></main>
+<p style="text-align:center;color:var(--mute);font-size:12px;margin:0 0 24px">Versie 11-10-2026 C</p>
 
 <dialog id="dlg"><form id="auth" style="display:grid;gap:10px">
   <h2 id="atitle" style="font-size:22px;margin:0">Inloggen</h2>
@@ -120,7 +122,17 @@ if (!window.supabase) {
   $('#view').innerHTML = '<div class="notice"><b>De site kon een onderdeel niet laden.</b><br>Zet je adblocker of Brave Shields uit voor deze site en druk op Ctrl+Shift+R.</div>';
   throw new Error('supabase-js niet geladen');
 }
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { lock: (name, timeout, fn) => fn() } });
+const mem = {};
+const safeStore = {
+  getItem: k => { let v; try { v = localStorage.getItem(k); } catch (e) { v = mem[k] ?? null; }
+    if (v && k === 'sven3dprint-auth') { try { JSON.parse(v); } catch (e) { safeStore.removeItem(k); return null; } }
+    return v; },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { mem[k] = v; } },
+  removeItem: k => { try { localStorage.removeItem(k); } catch (e) { delete mem[k]; } }
+};
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: {
+  persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
+  storage: safeStore, storageKey: 'sven3dprint-auth', lock: (name, timeout, fn) => fn() } });
 let user = null, me = null, tab = 'portfolio', projects = [], favs = new Set(), unread = 0, newReq = 0, counts = {}, settings = {};
 const CATS = ['Alle', 'Decoratie', 'Functioneel', 'Speelgoed', 'Cosplay', 'Onderdelen', 'Overig'];
 let q = '', cat = 'Alle', sort = 'new';
@@ -137,7 +149,10 @@ const canFil = () => me && (me.is_owner || me.can_filament);
 
 async function load() {
  try {
-  const { data: { session } } = await sb.auth.getSession();
+  let session = null;
+  try {
+    session = (await Promise.race([sb.auth.getSession(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))])).data.session;
+  } catch (e) { safeStore.removeItem('sven3dprint-auth'); }
   user = session?.user || null; me = null; favs = new Set();
   if (user) {
     me = (await sb.from('profiles').select('*').eq('id', user.id).single()).data;
@@ -155,12 +170,12 @@ async function load() {
   $('#view').innerHTML = `<div class="notice"><b>Er ging iets mis bij het laden.</b><br>${esc(e.message)}<br>Probeer Ctrl+Shift+R, of zet je adblocker of Brave Shields uit voor deze site.</div>`;
  }
 }
-sb.auth.onAuthStateChange(() => load());
+sb.auth.onAuthStateChange((ev, sess) => { if (ev === 'SIGNED_OUT' || (sess?.user?.id || null) !== (user?.id || null)) load(); });
 
 function nav() {
   const t = [['portfolio', 'Portfolio'], ['about', 'Over Sven']];
   if (user) t.push(['favs', 'Favorieten'], ['req', 'Aanvragen' + (newReq ? ` (${newReq})` : '')], ['msg', 'Bericht aan Sven']);
-  if (canFil()) t.push(['fil', 'Filament']);
+  if (canFil()) t.push(['fil', 'Filament'], ['price', 'Prijs berekenen']);
   if (me?.is_owner) t.push(['admin', 'Beheer' + (unread ? ` (${unread})` : '')]);
   $('#nav').innerHTML = t.map(([k, l]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('') +
     '<span class="sp"></span><button id="th" aria-label="Donker of licht thema">◐</button>' + (user
@@ -406,11 +421,30 @@ async function vReq() {
   });
 }
 
+function vPrice() {
+  const f = (v, d) => v.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: d, maximumFractionDigits: d });
+  const field = (id, label, val, step) => `<label>${label}<input id="${id}" type="number" min="0" step="${step}" inputmode="decimal" value="${val}"></label>`;
+  $('#view').innerHTML = `<h2>Prijs berekenen</h2><form class="f" onsubmit="return false">
+    <p style="margin:0;color:var(--mute)">Vul de prijs en het gewicht van een rol in en hoeveel gram je print gebruikt. De prijs rolt er direct uit.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${field('pp', 'Prijs van de rol (€)', 20, '0.01')}${field('pw', 'Gewicht van de rol (gram)', 1000, '1')}</div>
+    ${field('pg', 'Gram die je print gebruikt', '', '0.1')}${field('pm', 'Opslag bovenop de materiaalkosten (%)', 0, '1')}
+    <div class="panel" id="pr" style="margin:0;grid-template-columns:repeat(3,1fr);text-align:center"></div></form>`;
+  const calc = () => {
+    const n = id => +$('#' + id).value || 0;
+    const ppg = n('pw') ? n('pp') / n('pw') : 0, cost = ppg * n('pg'), total = cost * (1 + n('pm') / 100);
+    const box = (v, l) => `<div><b style="font-size:20px">${v}</b><br><small style="color:var(--mute)">${l}</small></div>`;
+    $('#pr').innerHTML = box(f(ppg, 3), 'per gram') + box(f(cost, 2), 'materiaalkosten') + box(f(total, 2), n('pm') ? 'totaal met opslag' : 'totaalprijs');
+  };
+  ['pp', 'pw', 'pg', 'pm'].forEach(id => $('#' + id).oninput = calc);
+  calc();
+}
+
 function render() {
-  const ok = { portfolio: 1, about: 1, favs: !!user, msg: !!user, req: !!user, fil: canFil(), admin: me?.is_owner };
+  try { sessionStorage.removeItem('herstart'); } catch (e) {}
+  const ok = { portfolio: 1, about: 1, price: canFil(), favs: !!user, msg: !!user, req: !!user, fil: canFil(), admin: me?.is_owner };
   if (!ok[tab]) tab = 'portfolio';
   nav();
-  ({ portfolio: vPortfolio, about: vAbout, favs: vFavs, req: vReq, msg: vMsg, fil: vFil, admin: vAdmin })[tab]();
+  ({ portfolio: vPortfolio, about: vAbout, price: vPrice, favs: vFavs, req: vReq, msg: vMsg, fil: vFil, admin: vAdmin })[tab]();
 }
 
 // Inloggen / registreren
@@ -430,10 +464,18 @@ $('#auth').onsubmit = async e => {
   $('#dlg').close();
 };
 load();
+window.addEventListener('unhandledrejection', e => {
+  if (!document.querySelector('#nav button')) $('#view').innerHTML = `<div class="notice"><b>Er ging iets mis.</b><br>${esc(e.reason?.message || e.reason)}</div>`;
+});
 setTimeout(() => {
-  if (!document.querySelector('#nav button')) {
-    $('#view').innerHTML = '<div class="notice"><b>De site blijft hangen bij het laden.</b><br>1. Druk op Ctrl+Shift+R.<br>2. Zet Brave Shields uit voor deze site (leeuwtje rechts in de adresbalk).<br>3. Wis de sitegegevens: klik links in de adresbalk op het icoontje, kies Sitegegevens/Cookies en wis ze, en laad opnieuw.</div>';
+  if (document.querySelector('#nav button') || !$('#view').textContent.includes('Laden')) return;
+  let again = null;
+  try { again = sessionStorage.getItem('herstart'); sessionStorage.setItem('herstart', '1'); } catch (e) {}
+  if (!again) {
+    try { Object.keys(localStorage).filter(k => k.startsWith('sb-') || k.startsWith('sven3dprint')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    return location.reload();
   }
+  $('#view').innerHTML = '<div class="notice"><b>De site blijft hangen bij het laden.</b><br>Zet Brave Shields uit voor deze site (leeuwtje rechts in de adresbalk) en druk op Ctrl+Shift+R. Blijft het hangen, stuur dan een screenshot van F12 > Console.</div>';
 }, 8000);
 </script>
 </body>
