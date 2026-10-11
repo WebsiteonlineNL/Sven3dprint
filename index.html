@@ -85,7 +85,7 @@ dialog::backdrop{background:#000000b3}
   <div class="layers"></div>
   <nav id="nav"></nav>
 </div></header>
-<main id="view"></main>
+<main id="view"><p class="empty">Laden…</p></main>
 
 <dialog id="dlg"><form id="auth" style="display:grid;gap:10px">
   <h2 id="atitle" style="font-size:22px;margin:0">Inloggen</h2>
@@ -120,7 +120,7 @@ if (!window.supabase) {
   $('#view').innerHTML = '<div class="notice"><b>De site kon een onderdeel niet laden.</b><br>Zet je adblocker of Brave Shields uit voor deze site en druk op Ctrl+Shift+R.</div>';
   throw new Error('supabase-js niet geladen');
 }
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { lock: (name, timeout, fn) => fn() } });
 let user = null, me = null, tab = 'portfolio', projects = [], favs = new Set(), unread = 0, newReq = 0, counts = {}, settings = {};
 const CATS = ['Alle', 'Decoratie', 'Functioneel', 'Speelgoed', 'Cosplay', 'Onderdelen', 'Overig'];
 let q = '', cat = 'Alle', sort = 'new';
@@ -430,6 +430,11 @@ $('#auth').onsubmit = async e => {
   $('#dlg').close();
 };
 load();
+setTimeout(() => {
+  if (!document.querySelector('#nav button')) {
+    $('#view').innerHTML = '<div class="notice"><b>De site blijft hangen bij het laden.</b><br>1. Druk op Ctrl+Shift+R.<br>2. Zet Brave Shields uit voor deze site (leeuwtje rechts in de adresbalk).<br>3. Wis de sitegegevens: klik links in de adresbalk op het icoontje, kies Sitegegevens/Cookies en wis ze, en laad opnieuw.</div>';
+  }
+}, 8000);
 </script>
 </body>
 </html>
