@@ -312,21 +312,21 @@ async function vFil() {
   const low = data.filter(r => pc(r) < .2).length, tot = data.reduce((s, r) => s + +r.meters_left, 0);
   const big = c => `style="font-size:26px;${c || ''}"`;
   $('#view').innerHTML = `<h2>Filamentrollen</h2><div class="panel" style="grid-template-columns:repeat(3,1fr);text-align:center">
-    <div><b ${big()}>${data.length}</b><br>rollen</div><div><b ${big()}>${Math.round(tot)}</b><br>meter over</div>
+    <div><b ${big()}>${data.length}</b><br>rollen</div><div><b ${big()}>${tot >= 1000 ? (tot / 1000).toFixed(1) + ' kg' : Math.round(tot) + ' g'}</b><br>filament over</div>
     <div><b ${big(low ? 'color:var(--acc)' : '')}>${low}</b><br>bijna leeg</div></div>` + (data.length ? data.map(r => {
     const p = Math.max(0, Math.min(100, pc(r) * 100));
     return `<div class="roll"><span class="dot" style="background:${esc(r.color)}"></span>
       <div><b>${esc(r.name)}</b> <span style="color:var(--mute)">${esc(r.material || '')}</span>${p < 20 ? ' <b style="color:var(--acc)">bijna leeg</b>' : ''}
-      <div style="color:var(--mute);font-size:14px">${r.meters_left} / ${r.meters_total} m · bijgewerkt ${fmt(r.updated_at)}</div>
+      <div style="color:var(--mute);font-size:14px">${r.meters_left} / ${r.meters_total} gram · bijgewerkt ${fmt(r.updated_at)}</div>
       <div class="bar"><i class="${p < 20 ? 'low' : ''}" style="width:${p}%"></i></div></div>
-      <div class="rr"><input type="number" min="0" value="${r.meters_left}" data-m="${r.id}" aria-label="Meters over"><button class="btn sm" data-s="${r.id}">Zet op</button>
-      <input type="number" min="0" placeholder="gebruikt" data-u="${r.id}" aria-label="Meters gebruikt"><button class="btn ghost sm" data-a="${r.id}">Aftrekken</button>
+      <div class="rr"><input type="number" min="0" value="${r.meters_left}" data-m="${r.id}" aria-label="Gram over"><button class="btn sm" data-s="${r.id}">Zet op</button>
+      <input type="number" min="0" placeholder="gram gebruikt" data-u="${r.id}" aria-label="Gram gebruikt"><button class="btn ghost sm" data-a="${r.id}">Aftrekken</button>
       ${me.is_owner ? `<button class="btn ghost sm" data-x="${r.id}" aria-label="Verwijderen">✕</button>` : ''}</div></div>`;
   }).join('') : '<p class="empty">Nog geen rollen. Voeg hieronder de eerste toe.</p>') +
   `<form class="f" id="rf"><h3 style="margin:0">Nieuwe rol</h3>
     <label>Naam (merk + kleur)<input id="rn" required></label><label>Materiaal<input id="rm" placeholder="PLA, PETG…"></label>
     <label>Kleur<input id="rc" type="color" value="#808080"></label>
-    <label>Meters op een volle rol<input id="rt" type="number" value="330" min="1"></label>
+    <label>Gewicht van een volle rol (gram)<input id="rt" type="number" value="1000" min="1"></label>
     <button class="btn acc">Rol toevoegen</button></form>`;
   const save = async (id, v) => {
     const { error } = await sb.from('filaments').update({ meters_left: Math.max(0, v), updated_at: new Date().toISOString() }).eq('id', id);
