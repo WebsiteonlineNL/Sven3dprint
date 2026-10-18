@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
+<title>Sven3Dprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F2ED;--ink:#1C1B1F;--mute:#7A756C;--card:#FFFFFF;--line:#E6E1D8;--acc:#F26B21;--acc2:#FFEBDF;--teal:#F26B21;
+--side:#18181B;--sideink:#E9E7E2;--sidemute:#8C8A85;--sideline:#2A2A2F;--r:14px;
+--sh:0 1px 2px rgba(20,20,20,.05),0 10px 28px -14px rgba(20,20,20,.18)}
+[data-theme=dark]{--bg:#0F0F11;--ink:#F2F0EC;--mute:#9A968E;--card:#1A1A1E;--line:#2B2B31;--acc:#FF7A33;--acc2:#2D1D13;--teal:#FF7A33;
+--side:#0A0A0C;--sideline:#202025;--sh:none}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 'Bricolage Grotesque',system-ui,sans-serif}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.content{flex:1;min-width:0}
+main{max-width:1080px;margin:0 auto;padding:40px 36px 24px}
+.ver{text-align:center;color:var(--mute);font-size:12px;margin:0;padding:0 0 28px}
+
+/* Zijmenu */
+aside{width:272px;flex:none;background:var(--side);color:var(--sideink);position:sticky;top:0;height:100vh;
+  display:flex;flex-direction:column;padding:28px 14px 14px;overflow-y:auto;z-index:30}
+.brand{font-weight:800;font-size:30px;letter-spacing:-.03em;line-height:1;padding:0 10px;color:#fff}
+.brand b{color:var(--acc)}
+.layers{height:18px;margin:14px 10px 6px;background:repeating-linear-gradient(to bottom,var(--acc) 0 2px,transparent 2px 5px);
+  -webkit-mask:linear-gradient(90deg,#000 0,#000 35%,transparent);mask:linear-gradient(90deg,#000 0,#000 35%,transparent)}
+nav{display:flex;flex-direction:column;gap:2px;flex:1}
+nav h4{margin:20px 10px 6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sidemute);font-weight:600}
+nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;color:var(--sideink);
+  font:inherit;font-size:15px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .15s}
+nav button svg,.top svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+nav button span{flex:1}
+nav button em{font-style:normal;font-size:12px;background:rgba(255,255,255,.09);padding:1px 8px;border-radius:20px;color:var(--sidemute)}
+nav button:hover{background:rgba(255,255,255,.07)}
+nav button.on{background:var(--acc);color:#fff}
+nav button.on em{background:rgba(255,255,255,.25);color:#fff}
+nav button[data-c]{padding:7px 10px;font-size:14.5px;color:#C9C7C2}
+nav button[data-c] svg{width:14px;height:14px;opacity:.5}
+nav button[data-c].on{background:rgba(255,255,255,.1);color:#fff}
+nav button[data-c].on svg{stroke:var(--acc);fill:var(--acc);opacity:1}
+.sfoot{border-top:1px solid var(--sideline);margin-top:16px;padding:14px 4px 0;display:flex;align-items:center;gap:8px}
+.sfoot .u{flex:1;font-size:13px;color:var(--sidemute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfoot button{background:rgba(255,255,255,.07);border:0;color:var(--sideink);font:inherit;font-size:14px;padding:7px 12px;border-radius:9px;cursor:pointer}
+.sfoot button:hover{background:rgba(255,255,255,.14)}
+.sfoot #in{background:var(--acc);color:#fff;font-weight:600}
+.top{display:none}
+.scrim{display:none}
+
+/* Koppen en kaarten */
+h2{font-size:34px;letter-spacing:-.03em;line-height:1.1;margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:var(--sh);transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px)}
+.card img,.ph{width:100%;aspect-ratio:4/3;object-fit:cover;background:repeating-linear-gradient(to bottom,#ECE7DE 0 4px,#E2DCD1 4px 8px)}
+[data-theme=dark] .ph,[data-theme=dark] .card img{background:repeating-linear-gradient(to bottom,#262629 0 4px,#1E1E21 4px 8px)}
+.card .b{padding:16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card h3{margin:0;font-size:19px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--mute);font-size:15px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:auto;padding-top:10px;color:var(--mute);font-size:14px}
+[data-open]{cursor:pointer}
+.chip{background:none;border:1px solid var(--line);color:var(--ink);border-radius:20px;padding:4px 12px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.card .chip{align-self:flex-start;cursor:default;font-size:12px;padding:2px 10px;background:var(--acc2);border-color:transparent;color:var(--acc);font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.heart{background:none;border:0;font-size:24px;cursor:pointer;color:var(--acc);line-height:1}
+.feat{margin-bottom:26px}
+.feat .card{display:grid;grid-template-columns:1fr 1fr}
+.feat .card img,.feat .ph{height:100%;aspect-ratio:auto;min-height:200px}
+
+/* Knoppen en formulieren */
+button.btn,.btn{background:var(--ink);color:var(--bg);border:0;border-radius:10px;padding:10px 16px;font:600 15px/1.2 'Bricolage Grotesque',system-ui,sans-serif;cursor:pointer}
+.btn.acc{background:var(--acc);color:#fff}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:8px}
+form.f,.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:24px;display:grid;gap:10px;box-shadow:var(--sh)}
+input,textarea,select{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);width:100%}
+label{font-size:14px;color:var(--mute);display:grid;gap:4px}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.bar2{display:grid;grid-template-columns:1fr 150px;gap:8px;margin-bottom:20px}
+
+/* Overig */
+.roll{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.dot{width:28px;height:28px;border-radius:50%;border:3px solid var(--ink)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:#3D9A6B;border-radius:4px}
+.bar i.low{background:var(--acc)}
+.rr{display:flex;gap:6px;align-items:center}.rr input{width:90px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+td,th{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:15px}
+.msg{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;padding:12px 16px;margin-bottom:10px}
+.msg small{color:var(--mute)}
+dialog{border:0;border-radius:18px;padding:24px;width:min(380px,92vw);background:var(--card);color:var(--ink);box-shadow:0 30px 80px -20px #0008}
+dialog::backdrop{background:#000000b3}
+#det{width:min(560px,94vw);max-height:90vh}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;display:none;z-index:99}
+.empty{color:var(--mute);padding:30px 0}
+.notice{background:var(--acc2);border:1px solid var(--acc);padding:16px;border-radius:var(--r)}
+@media (prefers-reduced-motion:no-preference){.layers{animation:rise .9s ease-out}@keyframes rise{from{height:0}}}
+
+/* Mobiel */
+@media (max-width:860px){
+  .app{display:block}
+  .top{display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;background:var(--side);padding:12px 16px}
+  .top .brand{padding:0;font-size:24px}
+  .top button{background:rgba(255,255,255,.1);border:0;color:#fff;border-radius:10px;width:42px;height:38px;display:grid;place-items:center;cursor:pointer}
+  aside{position:fixed;left:0;top:0;bottom:0;height:auto;transform:translateX(-100%);transition:transform .25s ease;width:min(290px,86vw)}
+  body.open aside{transform:none}
+  body.open .scrim{display:block;position:fixed;inset:0;background:#0008;z-index:25}
+  main{padding:24px 16px 16px}
+  h2{font-size:28px}
+}
+@media (max-width:640px){
+  .roll{grid-template-columns:28px 1fr}.roll .rr{grid-column:1/-1;flex-wrap:wrap}
+  .feat .card{grid-template-columns:1fr}.feat .card img,.feat .ph{aspect-ratio:4/3;min-height:0}
+}
+
+/* ===== Versie 2: blokken en pagina's ===== */
+.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.14em}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  #view>*{animation:fadeUp .45s ease both}
+  #view>*:nth-child(2){animation-delay:.05s}#view>*:nth-child(3){animation-delay:.1s}#view>*:nth-child(4){animation-delay:.15s}
+  .grid>.card{animation:fadeUp .5s ease both}
+  .grid>.card:nth-child(2){animation-delay:.04s}.grid>.card:nth-child(3){animation-delay:.08s}.grid>.card:nth-child(4){animation-delay:.12s}
+  .grid>.card:nth-child(5){animation-delay:.16s}.grid>.card:nth-child(6){animation-delay:.2s}
+}
+.head{display:flex;align-items:center;gap:16px;margin-bottom:26px}
+.head-ic{width:54px;height:54px;border-radius:16px;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:26px;box-shadow:0 10px 24px -10px var(--acc);flex:none}
+.head h2{margin:0}
+.head p{margin:2px 0 0;color:var(--mute)}
+.subh{font-size:20px;letter-spacing:-.01em;margin:30px 0 12px}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:6px 0 14px}
+.sec h2{margin:0;font-size:26px}.sec span{color:var(--mute);font-size:14px}
+.kicker{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:44px;margin-bottom:28px;color:#fff;
+  background:radial-gradient(900px 420px at 100% 0,rgba(242,107,33,.55),transparent 60%),linear-gradient(135deg,#1c1b1f,#2b2825);
+  display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:center}
+.hero::after{content:"";position:absolute;right:0;bottom:0;width:60%;height:100%;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.07) 0 2px,transparent 2px 7px);
+  -webkit-mask:linear-gradient(90deg,transparent,#000);mask:linear-gradient(90deg,transparent,#000)}
+.hero>*{position:relative;z-index:1}
+.hero h1{font-size:clamp(34px,5vw,56px);line-height:1.02;letter-spacing:-.035em;margin:12px 0 14px;font-weight:800}
+.hero p{color:#cfcac2;max-width:46ch;margin:0 0 22px}
+.hero-b{display:flex;gap:10px;flex-wrap:wrap}
+.btn.ghost-l{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.22)}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(3,1fr)}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--sh)}
+.tile .i{font-size:20px;color:var(--acc);margin-bottom:6px}
+.tile b{font-size:28px;line-height:1;letter-spacing:-.02em}
+.tile span{color:var(--mute);font-size:13px}
+.hero .tile{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);box-shadow:none;backdrop-filter:blur(6px)}
+.hero .tile span{color:#bdb8af}
+
+/* Uitgelicht */
+.feat{display:grid;grid-template-columns:1.1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:30px;box-shadow:var(--sh)}
+.fimg{position:relative;min-height:270px;background:var(--line)}
+.fimg img,.fimg .ph{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;object-fit:cover;cursor:pointer}
+.fb{padding:30px;display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:flex-start}
+.fb h3{font-size:30px;margin:0;letter-spacing:-.025em;line-height:1.1}
+.fb p{margin:0;color:var(--mute)}
+
+/* Zoekbalk */
+.toolbar{display:grid;grid-template-columns:1fr 170px;gap:10px;margin-bottom:22px}
+.search{position:relative}
+.search .i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:18px}
+.search input{padding-left:44px;border-radius:14px;height:48px;background:var(--card)}
+.toolbar select{height:48px;border-radius:14px;background:var(--card)}
+
+/* Kaarten */
+.card:hover{box-shadow:0 24px 40px -24px rgba(20,20,20,.4);border-color:var(--acc)}
+.media{position:relative;overflow:hidden;aspect-ratio:4/3;background:var(--line)}
+.media img,.media .ph{width:100%;height:100%;aspect-ratio:auto;object-fit:cover;display:block;transition:transform .5s ease;cursor:pointer}
+.card:hover .media img{transform:scale(1.06)}
+.ph{display:grid;place-items:center;color:var(--mute);font-size:44px}
+.badge{position:absolute;left:12px;top:12px;background:rgba(20,20,20,.72);color:#fff;backdrop-filter:blur(6px);font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;pointer-events:none}
+.badge.s{position:static;background:var(--acc2);color:var(--acc);backdrop-filter:none;display:inline-block}
+.count{position:absolute;left:12px;bottom:12px;background:rgba(20,20,20,.72);color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;pointer-events:none}
+.media .heart{position:absolute;right:12px;top:12px;min-width:40px;height:40px;border-radius:20px;padding:0 13px;background:rgba(255,255,255,.93);color:#555;font-size:20px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 4px 12px -4px #0005;transition:transform .15s}
+.media .heart:hover{transform:scale(1.1)}
+.media .heart.is{color:#E5484D}
+.media .heart small{font-size:13px;font-weight:600;color:#444}
+[data-theme=dark] .media .heart{background:rgba(20,20,20,.85);color:#ddd}
+[data-theme=dark] .media .heart small{color:#ddd}
+.card .b{padding:16px 18px 16px;gap:8px}
+.card h3{cursor:pointer;font-size:20px}
+.card h3:hover{color:var(--acc)}
+.card p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pills span{display:inline-flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:12.5px;color:var(--mute)}
+.pills .i{color:var(--acc)}
+.card .row{border-top:1px solid var(--line);padding-top:12px;margin-top:auto}
+.card .btn.sm{display:inline-flex;align-items:center;gap:5px}
+.btn .i{margin-right:4px}
+
+/* Formulieren */
+.addbox{margin-bottom:24px}
+.addbox summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:600}
+.addbox summary::-webkit-details-marker{display:none}
+.addbox[open] summary{background:var(--acc);color:#fff}
+.addbox form.f{margin-top:12px}
+.rr label input{width:100%}
+input[type=checkbox]{accent-color:var(--acc)}
+.emptybox{grid-column:1/-1;text-align:center;padding:56px 20px;background:var(--card);border:1px dashed var(--line);border-radius:20px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mute);margin-bottom:20px}
+.emptybox .i{font-size:44px;color:var(--acc);margin-bottom:8px}
+.emptybox b{color:var(--ink);font-size:20px}
+
+/* Detailvenster */
+#det{width:min(680px,94vw);max-height:92vh;padding:0;overflow:auto;border-radius:22px}
+.dgal{background:var(--bg)}
+.gbig{display:block;width:100%;max-height:420px;object-fit:cover}
+.ph.big{aspect-ratio:16/9;font-size:64px}
+.thumbs{display:flex;gap:8px;padding:12px 22px 4px;flex-wrap:wrap}
+.thumbs img{width:68px;height:52px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.6;border:2px solid transparent}
+.thumbs img.on,.thumbs img:hover{opacity:1;border-color:var(--acc)}
+.dbody{padding:22px}
+.dbody h2{font-size:30px;margin:10px 0 6px}
+.dd{color:var(--mute);margin:0 0 16px}
+.specs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.spec{background:var(--bg);border-radius:14px;padding:12px 14px;display:grid;gap:1px}
+.spec .i{color:var(--acc);font-size:18px;margin-bottom:4px}
+.spec span{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.spec b{font-size:16px}
+.dact{display:flex;justify-content:space-between;gap:10px;margin-top:20px}
+
+/* Over Sven */
+.about{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;margin-bottom:28px;align-items:start}
+.abt-card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;display:flex;gap:20px;box-shadow:var(--sh)}
+.avatar{width:72px;height:72px;border-radius:22px;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:36px;font-weight:800;flex:none}
+.abt-card h3{margin:0 0 8px;font-size:24px}
+.prewrap{white-space:pre-line;margin:0;color:var(--mute)}
+.abt-side{display:grid;gap:14px}
+.contact{background:var(--ink);color:var(--bg);border-radius:18px;padding:18px;display:grid;gap:2px}
+.contact .i{font-size:20px;color:var(--acc)}
+.contact span{font-size:12px;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.contact b{font-size:17px;word-break:break-word}
+
+/* Berichten */
+.chat{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.bub{max-width:min(520px,88%);padding:10px 14px;border-radius:18px;border:1px solid var(--line);background:var(--card)}
+.bub small{display:block;opacity:.7;font-size:12px}
+.bub.me{align-self:flex-end;background:var(--acc);color:#fff;border-color:transparent;border-bottom-right-radius:6px}
+.bub.them{align-self:flex-start;border-bottom-left-radius:6px}
+.wait{align-self:flex-end;color:var(--mute);font-size:12px}
+
+/* Aanvragen */
+.req{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:12px;box-shadow:var(--sh)}
+.req-h{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:4px}
+.req-h b{font-size:18px}
+.st{font-size:12px;font-weight:700;padding:3px 11px;border-radius:20px;text-transform:capitalize;white-space:nowrap}
+.st-nieuw{background:var(--acc2);color:var(--acc)}
+.st-bezig{background:#E3EEFF;color:#2A62C9}
+.st-klaar{background:#DDF3E6;color:#237A4B}
+.st-afgewezen{background:#EDEAE4;color:#7A756C}
+[data-theme=dark] .st-bezig{background:#17263F;color:#7FAAF0}
+[data-theme=dark] .st-klaar{background:#12301F;color:#6BCB93}
+[data-theme=dark] .st-afgewezen{background:#2A2A2E;color:#9A968E}
+.note{background:var(--bg);border-radius:10px;padding:8px 12px;margin-top:10px}
+.note small{display:block;color:var(--mute)}
+
+/* Filament */
+.rollc{display:grid;grid-template-columns:56px 1fr;gap:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:12px;box-shadow:var(--sh)}
+.sw{width:56px;height:56px;border-radius:50%;position:relative;border:1px solid rgba(0,0,0,.15)}
+.sw::after{content:"";position:absolute;inset:34%;border-radius:50%;background:var(--card);border:1px solid var(--line)}
+.top2{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pc{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.rollc .bar{height:10px;margin-top:8px}
+.rollc .rr{grid-column:1/-1;flex-wrap:wrap}
+
+/* Prijs */
+.calc{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start}
+.calc form.f{margin:0}
+.result{background:linear-gradient(135deg,#1c1b1f,#2b2825);color:#fff;border-radius:22px;padding:28px;position:sticky;top:24px}
+.result .big{font-size:clamp(44px,6vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:8px 0 20px}
+.result .rs{display:grid;gap:10px;border-top:1px solid rgba(255,255,255,.14);padding-top:16px}
+.result .rs div{display:flex;justify-content:space-between}
+.result small{color:#bdb8af;font-size:14px}
+
+/* Beheer */
+.tblw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--line);background:var(--card);box-shadow:var(--sh)}
+.tblw table{border:0;border-radius:0}
+th{background:var(--bg);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;padding:28px}
+  .feat{grid-template-columns:1fr}.fimg{min-height:220px}
+  .about,.calc{grid-template-columns:1fr}.result{position:static}
+  .head h2{font-size:28px}
+}
+@media (max-width:520px){
+  .toolbar{grid-template-columns:1fr}.abt-card{flex-direction:column}.hero .tiles,.abt-side .tiles{gap:8px}.tile{padding:12px}.tile b{font-size:22px}
+}
+
+.bars{display:flex;gap:8px;align-items:flex-end;height:200px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:30px 16px 12px;box-shadow:var(--sh)}
+.bc{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:6px}
+.bc i{display:block;width:100%;max-width:44px;background:var(--acc);border-radius:8px 8px 4px 4px;position:relative;min-height:4px}
+.bc i b{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:12px;font-style:normal}
+.bc span{font-size:11px;color:var(--mute)}
+.hb{display:grid;grid-template-columns:110px 1fr 30px;gap:10px;align-items:center;margin-bottom:8px;font-size:14px}
+.hb div{height:10px;background:var(--line);border-radius:5px;overflow:hidden}.hb div i{display:block;height:100%;background:var(--acc)}
+.grid.list{grid-template-columns:1fr}.grid.list .card{flex-direction:row}.grid.list .media{width:240px;aspect-ratio:auto;flex:none}
+.toolbar{grid-template-columns:1fr 170px auto}
+#ac{color:var(--acc)!important}
+[data-accent=blue]{--acc:#2F6BFF;--teal:#2F6BFF;--acc2:#E4ECFF}[data-accent=green]{--acc:#1F9D63;--teal:#1F9D63;--acc2:#DDF3E6}[data-accent=purple]{--acc:#8A4FFF;--teal:#8A4FFF;--acc2:#EEE5FF}
+[data-theme=dark][data-accent=blue]{--acc:#6C9BFF;--acc2:#16213D}[data-theme=dark][data-accent=green]{--acc:#4FD18D;--acc2:#12301F}[data-theme=dark][data-accent=purple]{--acc:#B08CFF;--acc2:#241A3D}
+@media (max-width:640px){.grid.list .card{flex-direction:column}.grid.list .media{width:auto;aspect-ratio:4/3}.toolbar{grid-template-columns:1fr auto}}
+.alertbar{display:flex;align-items:center;gap:12px;margin:20px 36px 0;padding:12px 16px;background:var(--acc2);border:1px solid var(--acc);border-radius:14px}.alertbar span{flex:1}.alertbar .i{color:var(--acc);font-size:20px}@media (max-width:860px){.alertbar{margin:16px 16px 0;flex-wrap:wrap}}</style>
+</head>
+<body>
+<div class="top"><div class="brand">Sven<b>3D</b>print</div>
+  <button id="menubtn" aria-label="Menu openen"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div>
+<div class="app">
+<aside id="side">
+  <div class="brand">Sven<b>3D</b>print</div>
+  <div class="layers"></div>
+  <nav id="nav"></nav>
+  <div class="sfoot" id="sfoot"></div>
+</aside>
+<div class="content">
+<div id="alert"></div>
+<main id="view"><p class="empty">Laden…</p></main>
+<p class="ver">Hobbyproject van Sven · geen webshop · Versie 18-10-2026 H</p>
+</div>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<dialog id="dlg"><form id="auth" style="display:grid;gap:10px">
+  <h2 id="atitle" style="font-size:22px;margin:0">Inloggen</h2>
+  <label id="nm" hidden>Naam<input id="name"></label>
+  <label>E-mail<input id="email" type="email" required autocomplete="email"></label>
+  <label>Wachtwoord<input id="pw" type="password" minlength="6" required autocomplete="current-password"></label>
+  <button class="btn acc" id="asub">Inloggen</button>
+  <button type="button" class="btn ghost" id="aswap">Nog geen account? Registreren</button>
+  <button type="button" class="btn ghost" id="aclose">Sluiten</button>
+</form></dialog>
+<dialog id="det"><div id="detc"></div></dialog>
+<dialog id="tour"></dialog>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')}</script>
+<script>
+// === INSTELLEN: vul jouw Supabase-gegevens in (Project Settings > API) ===
+const SUPABASE_URL = 'https://kigjqasrizifysxpfvip.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rWkyhsjFTGu91V8xqM0yGQ_HjpMbkv5';
+// =========================================================================
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toast = t => { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; setTimeout(() => e.style.display = 'none', 2600); };
+const fmt = d => new Date(d).toLocaleDateString('nl-NL', {day:'numeric', month:'long', year:'numeric'});
+
+if (SUPABASE_URL.startsWith('JOUW')) {
+  $('#view').innerHTML = '<div class="notice"><b>Bijna klaar.</b> Vul bovenaan in index.html je Supabase-URL en sleutel in (zie de uitleg).</div>';
+  throw new Error('Supabase niet ingesteld');
+}
+if (!window.supabase) {
+  $('#view').innerHTML = '<div class="notice"><b>De site kon een onderdeel niet laden.</b><br>Zet je adblocker of Brave Shields uit voor deze site en druk op Ctrl+Shift+R.</div>';
+  throw new Error('supabase-js niet geladen');
+}
+const mem = {};
+const safeStore = {
+  getItem: k => { let v; try { v = localStorage.getItem(k); } catch (e) { v = mem[k] ?? null; }
+    if (v && k === 'sven3dprint-auth') { try { JSON.parse(v); } catch (e) { safeStore.removeItem(k); return null; } }
+    return v; },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { mem[k] = v; } },
+  removeItem: k => { try { localStorage.removeItem(k); } catch (e) { delete mem[k]; } }
+};
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: {
+  persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
+  storage: safeStore, storageKey: 'sven3dprint-auth', lock: (name, timeout, fn) => fn() } });
+let user = null, me = null, tab = 'portfolio', projects = [], favs = new Set(), unread = 0, newReq = 0, counts = {}, settings = {};
+const CATS = ['Alle', 'Decoratie', 'Functioneel', 'Speelgoed', 'Cosplay', 'Onderdelen', 'Overig'];
+let q = '', cat = 'Alle', sort = 'new', listView = false, shownIds = [], curId = null, pageN = 12;
+try { document.documentElement.dataset.accent = localStorage.getItem('accent') || ''; } catch (e) {}
+try { document.documentElement.dataset.theme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); } catch (e) {}
+async function toggleFav(id) {
+  if (!user) { $('#det').close(); return $('#dlg').showModal(); }
+  if (favs.has(id)) await sb.from('favorites').delete().eq('project_id', id);
+  else await sb.from('favorites').insert({ project_id: id });
+  await load();
+}
+
+const canAdd = () => me && (me.is_owner || me.can_add);
+const canFil = () => me && (me.is_owner || me.can_filament);
+
+async function load() {
+ try {
+  let session = null;
+  try {
+    session = (await Promise.race([sb.auth.getSession(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))])).data.session;
+  } catch (e) { safeStore.removeItem('sven3dprint-auth'); }
+  user = session?.user || null; me = null; favs = new Set();
+  if (user) {
+    me = (await sb.from('profiles').select('*').eq('id', user.id).single()).data;
+    (await sb.from('favorites').select('project_id')).data?.forEach(f => favs.add(f.project_id));
+  }
+  projects = (await sb.from('projects').select('*').order('created_at', { ascending: false })).data || [];
+  if (!canAdd()) projects = projects.filter(p => (p.status || 'live') === 'live');
+  unread = me?.is_owner ? ((await sb.from('messages').select('id', { count: 'exact', head: true }).eq('is_read', false)).count || 0) : 0;
+  counts = {};
+  ((await sb.rpc('fav_counts')).data || []).forEach(c => counts[c.project_id] = +c.n);
+  settings = {};
+  ((await sb.from('site_settings').select('*')).data || []).forEach(r => settings[r.key] = r.value);
+  newReq = me?.is_owner ? ((await sb.from('requests').select('id', { count: 'exact', head: true }).eq('status', 'nieuw')).count || 0) : 0;
+  lowRolls = canFil() ? ((await sb.from('filaments').select('*')).data || []).filter(x => !x.archived && isLow(x)) : [];
+  if (lowRolls.length && !shownLow) { shownLow = true; toast('Let op: ' + lowRolls.map(x => x.name).join(', ') + ' is bijna leeg'); }
+  render();
+  if (user && !$('#tour').open) { let seen = null; try { seen = localStorage.getItem('tour-' + user.id); } catch (e) {} if (!seen) tour(); }
+ } catch (e) {
+  $('#view').innerHTML = `<div class="notice"><b>Er ging iets mis bij het laden.</b><br>${esc(e.message)}<br>Probeer Ctrl+Shift+R, of zet je adblocker of Brave Shields uit voor deze site.</div>`;
+ }
+}
+sb.auth.onAuthStateChange((ev, sess) => { if (ev === 'SIGNED_OUT' || (sess?.user?.id || null) !== (user?.id || null)) load(); });
+
+const IC = {
+  portfolio: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  about: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  favs: '<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/>',
+  req: '<path d="M12 3l9 5v8l-9 5-9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  msg: '<path d="M4 5h16v11H9l-5 4z"/>',
+  fil: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
+  price: '<path d="M17 6a6 6 0 1 0 0 12M4 10h9M4 14h9"/>',
+  admin: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  dot: '<circle cx="12" cy="12" r="4"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  scale: '<path d="M6 7h12l2 13H4z"/><circle cx="12" cy="4.5" r="1.8"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  star: '<path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.3l1-6.2L3 9.7l6.2-.9z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  col: '<path d="M4 6h16v4H4zM6 12h12v4H6zM8 18h8"/>',
+  wish: '<path d="M5 6h14M5 12h14M5 18h9"/>',
+  maint: '<path d="M14 6l4 4-9 9H5v-4z"/>',
+  dash: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>'
+};
+const svg = k => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+const pageHead = (k, t, s) => `<div class="head"><div class="head-ic">${svg(k)}</div><div><h2>${t}</h2>${s ? `<p>${s}</p>` : ''}</div></div>`;
+const histHtml = lg => `<h3 class="subh">Geschiedenis</h3>` + (lg.length ? `<div class="tblw"><table><tr><th>Datum</th><th>Rol</th><th>Wijziging</th><th>Over</th><th>Reden</th></tr>${lg.map(x => `<tr><td>${fmt(x.created_at)}</td><td>${esc(x.filament_name)}</td><td><b style="color:${x.change < 0 ? 'var(--acc)' : '#3D9A6B'}">${x.change > 0 ? '+' : ''}${x.change} g</b></td><td>${x.left_after} g</td><td>${esc(x.reason || '—')}</td></tr>`).join('')}</table></div>` : '<p class="empty">Nog geen wijzigingen vastgelegd.</p>');
+const pct = () => +settings.fil_pct || 20;
+const isLow = x => x.meters_left <= x.meters_total * pct() / 100;
+let lowRolls = [], shownLow = false, alertOff = false;
+const bar = () => {
+  const e = $('#alert');
+  e.innerHTML = lowRolls.length && !alertOff && canFil() ? `<div class="alertbar">${svg('alert')}<span><b>Filament bijna leeg</b> (onder ${pct()}%): ${lowRolls.map(x => esc(x.name)).join(', ')}</span><button class="btn sm" id="alg">Bekijken</button><button class="btn ghost sm" id="alx" aria-label="Sluiten">✕</button></div>` : '';
+  $('#alg')?.addEventListener('click', () => { tab = 'fil'; render(); window.scrollTo(0, 0); });
+  $('#alx')?.addEventListener('click', () => { alertOff = true; bar(); });
+};
+const pctHtml = () => me?.is_owner ? `<div class="rr" style="margin-bottom:16px"><label style="flex:1">Melding bij bijna leeg<select id="pcs"><option value="20" ${pct() === 20 ? 'selected' : ''}>Onder 20%</option><option value="30" ${pct() === 30 ? 'selected' : ''}>Onder 30%</option></select></label></div>` : '';
+const lowHtml = d => { const l = d.filter(isLow); return l.length ? `<div class="notice" style="margin-bottom:20px"><b>Bijbestellen (onder ${pct()}%):</b> ${l.map(x => esc(x.name)).join(', ')}</div>` : ''; };
+const emptyBox = (k, t, s) => `<div class="emptybox">${svg(k)}<b>${t}</b><span>${s || ''}</span></div>`;
+['#det', '#dlg'].forEach(s => $(s).addEventListener('click', e => { if (e.target === $(s)) $(s).close(); }));
+const closeMenu = () => document.body.classList.remove('open');
+$('#menubtn').onclick = () => document.body.classList.toggle('open');
+$('#scrim').onclick = closeMenu;
+
+function nav() {
+  document.title = (unread + newReq ? `(${unread + newReq}) ` : '') + 'Sven3Dprint';
+  const pg = (k, l, n) => `<button data-t="${k}" class="${tab === k && (k !== 'portfolio' || cat === 'Alle') ? 'on' : ''}">${svg(k)}<span>${l}</span>${n ? `<em>${n}</em>` : ''}</button>`;
+  const cnt = c => projects.filter(p => p.category === c).length;
+  let h = `<h4>Pagina's</h4>${pg('portfolio', 'Portfolio', projects.length)}${pg('dash', 'Statistieken')}`;
+  h += '<h4>Categorieën</h4>' + CATS.slice(1).map(c =>
+    `<button data-c="${c}" class="${tab === 'portfolio' && cat === c ? 'on' : ''}">${svg('dot')}<span>${c}</span><em>${cnt(c)}</em></button>`).join('');
+  if (user) h += `<h4>Mijn account</h4>${pg('favs', 'Favorieten', favs.size)}${pg('req', 'Printverzoeken', newReq)}${pg('col', 'Verzamelingen')}${pg('msg', 'Bericht aan Sven')}`;
+  if (canFil()) h += `<h4>Werkplaats</h4>${pg('fil', 'Filament', lowRolls.length)}${pg('price', 'Kosten berekenen')}${pg('wish', 'Nog te printen')}${pg('maint', 'Onderhoud')}`;
+  if (me?.is_owner) h += `<h4>Beheer</h4>${pg('admin', 'Beheer', unread)}`;
+  $('#nav').innerHTML = h;
+  $('#sfoot').innerHTML = '<button id="th" aria-label="Donker of licht thema">◐</button><button id="ac" aria-label="Accentkleur">●</button><button id="tr" aria-label="Rondleiding">?</button>' + (user
+    ? `<span class="u">${esc(me?.name || user.email)}</span><button id="out">Uitloggen</button>`
+    : '<span class="u"></span><button id="in">Inloggen</button>');
+  document.querySelectorAll('#nav [data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; if (tab === 'portfolio') cat = 'Alle'; closeMenu(); render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('#nav [data-c]').forEach(b => b.onclick = () => { tab = 'portfolio'; cat = b.dataset.c; closeMenu(); render(); window.scrollTo(0, 0); });
+  $('#out')?.addEventListener('click', () => { closeMenu(); sb.auth.signOut(); });
+  $('#in')?.addEventListener('click', () => { closeMenu(); $('#dlg').showModal(); });
+  $('#ac').onclick = () => { const o = ['', 'blue', 'green', 'purple'], d = document.documentElement.dataset, n = o[(o.indexOf(d.accent || '') + 1) % 4]; d.accent = n; try { localStorage.setItem('accent', n); } catch (e) {} };
+  $('#tr').onclick = () => tour();
+  $('#th').onclick = () => { const d = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = d; try { localStorage.setItem('theme', d); } catch (e) {} };
+}
+
+function card(p) {
+  const mine = me && (me.is_owner || (me.can_add && p.created_by === user.id));
+  const pills = [p.material ? ['layers', p.material] : null, p.print_hours ? ['clock', p.print_hours + ' u'] : null, p.grams ? ['scale', p.grams + ' g'] : null, ...(p.tags || []).slice(0, 3).map(t => ['tag', t]), p.status && p.status !== 'live' ? ['alert', p.status] : null].filter(Boolean);
+  const n = counts[p.id] || 0;
+  return `<article class="card"><div class="media">${p.image_url ? `<img data-open="${p.id}" src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy">` : `<div class="ph" data-open="${p.id}">${svg('req')}</div>`}
+    <span class="badge">${esc(p.category || 'Overig')}</span>${String(p.id) === settings.week ? '<span class="badge" style="top:auto;bottom:12px;background:var(--acc)">★ Print van de week</span>' : ''}
+    <button class="heart ${favs.has(p.id) ? 'is' : ''}" data-fav="${p.id}" aria-label="Favoriet">${favs.has(p.id) ? '♥' : '♡'}${n ? `<small>${n}</small>` : ''}</button>
+    ${p.images?.length > 1 ? `<span class="count">${svg('portfolio')}${p.images.length}</span>` : ''}</div>
+  <div class="b"><h3 data-open="${p.id}">${esc(p.title)}</h3>${p.description ? `<p>${esc(p.description)}</p>` : ''}
+    ${pills.length ? `<div class="pills">${pills.map(x => `<span>${svg(x[0])}${esc(x[1])}</span>`).join('')}</div>` : ''}
+    <div class="row"><span>${fmt(p.created_at)}</span>${mine ? `<span><button class="btn ghost sm" data-edit="${p.id}">Bewerken</button> <button class="btn ghost sm" data-del="${p.id}">${svg('trash')}</button></span>` : ''}</div></div></article>`;
+}
+
+const gal = p => {
+  const u = p.images?.length ? p.images : (p.image_url ? [p.image_url] : []);
+  if (!u.length) return '';
+  return `<img id="big" class="gbig" src="${esc(u[0])}" alt="${esc(p.title)}">` + (u.length > 1
+    ? `<div class="thumbs">${u.map((x, i) => `<img data-th="${esc(x)}" class="${i ? '' : 'on'}" src="${esc(x)}" alt="">`).join('')}</div>` : '');
+};
+
+function openDetail(id) {
+  const p = projects.find(x => x.id === id); if (!p) return;
+  curId = id; history.replaceState(null, '', '#print-' + id);
+  const spec = [['tag', 'Categorie', p.category], ['layers', 'Materiaal', p.material], ['clock', 'Printtijd', p.print_hours ? p.print_hours + ' uur' : ''], ['scale', 'Gewicht', p.grams ? p.grams + ' gram' : ''], ['layers', 'Instellingen', p.settings], ['price', 'Kosten', canFil() && p.cost ? '€ ' + p.cost : ''], ['cal', 'Geplaatst', fmt(p.created_at)]].filter(x => x[2]);
+  $('#detc').innerHTML = `<div class="dgal">${gal(p) || `<div class="ph big">${svg('req')}</div>`}</div>
+    <div class="dbody"><span class="badge s">${esc(p.category || 'Overig')}</span><h2>${esc(p.title)}</h2>${p.description ? `<p class="dd">${esc(p.description)}</p>` : ''}
+    <div class="specs">${spec.map(x => `<div class="spec">${svg(x[0])}<span>${x[1]}</span><b>${esc(x[2])}</b></div>`).join('')}</div>
+    ${(p.tags || []).length ? `<div class="pills" style="margin-top:12px">${p.tags.map(t => `<span>${svg('tag')}${esc(t)}</span>`).join('')}</div>` : ''}${/^https?:/.test(p.model_url || '') ? `<p><a href="${esc(p.model_url)}" target="_blank" rel="noopener">Bekijk het 3D-model ↗</a></p>` : ''}${p.fail_reason ? `<p class="dd">Reden mislukt: ${esc(p.fail_reason)}</p>` : ''}<div id="colbox"></div><div id="cm"></div><div class="dact"><span><button class="btn ghost" id="dpv" aria-label="Vorige">‹</button> <button class="btn ghost" id="dnx" aria-label="Volgende">›</button> <button class="btn ghost" id="dsh">Link kopiëren</button> <button class="btn ghost" id="dwa">Delen</button></span>
+    <button class="btn acc" id="dfv">${favs.has(id) ? '♥ Favoriet' : '♡ Favoriet maken'}</button></div></div>`;
+  const step = d => { const i = shownIds.indexOf(id), n = shownIds[(i + d + shownIds.length) % shownIds.length]; if (i > -1 && n) openDetail(n); };
+  $('#dpv').onclick = () => step(-1); $('#dnx').onclick = () => step(1);
+  $('#dsh').onclick = () => navigator.clipboard?.writeText(location.href).then(() => toast('Link gekopieerd'));
+  $('#dwa').onclick = () => { const u = location.href; navigator.share ? navigator.share({ title: p.title, url: u }).catch(() => {}) : window.open('https://wa.me/?text=' + encodeURIComponent(p.title + ' ' + u), '_blank'); };
+  document.querySelectorAll('[data-th]').forEach(t => t.onclick = () => { $('#big').src = t.dataset.th; document.querySelectorAll('[data-th]').forEach(x => x.classList.toggle('on', x === t)); });
+  $('#dfv').onclick = async () => { await toggleFav(id); if (user) openDetail(id); };
+  loadExtras(id);
+  if (!$('#det').open) $('#det').showModal();
+}
+
+function bindCards() {
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openDetail(+b.dataset.open));
+  document.querySelectorAll('[data-fav]').forEach(b => b.onclick = () => toggleFav(+b.dataset.fav));
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editProject(+b.dataset.edit));
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    if (!confirm('Dit item verwijderen?')) return;
+    const t0 = projects.find(x => x.id === +b.dataset.del)?.title;
+    const { error } = await sb.from('projects').delete().eq('id', +b.dataset.del);
+    error ? toast(error.message) : (logAct('Print verwijderd: ' + t0), load());
+  });
+}
+
+function drawGrid() {
+  let l = projects.filter(p => (cat === 'Alle' || p.category === cat) &&
+    (p.title + ' ' + (p.description || '') + ' ' + (p.material || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().includes(q.toLowerCase()));
+  if (sort === 'old') l = [...l].reverse();
+  if (sort === 'pop') l = [...l].sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
+  if (sort === 'az') l = [...l].sort((a, b) => a.title.localeCompare(b.title));
+  if (settings.week) { const w = l.find(p => String(p.id) === settings.week); if (w) l = [w, ...l.filter(p => p !== w)]; }
+  shownIds = l.map(p => p.id); $('#grid').classList.toggle('list', listView);
+  $('#grid').innerHTML = l.length ? l.slice(0, pageN).map(card).join('') + (l.length > pageN ? '<div style="grid-column:1/-1;text-align:center"><button class="btn ghost" id="more">Meer laden</button></div>' : '') : emptyBox('search', 'Niets gevonden', 'Probeer een andere zoekterm of categorie.');
+  $('#ri').textContent = l.length + (l.length === 1 ? ' print' : ' prints');
+  bindCards();
+  $('#more')?.addEventListener('click', () => { pageN += 12; drawGrid(); });
+}
+
+function feat() {
+  const f = projects.find(p => String(p.id) === settings.featured);
+  if (!f) return '';
+  const pills = [f.category ? ['tag', f.category] : null, f.material ? ['layers', f.material] : null, f.print_hours ? ['clock', f.print_hours + ' u'] : null, f.grams ? ['scale', f.grams + ' g'] : null].filter(Boolean);
+  return `<section class="feat"><div class="fimg">${f.image_url ? `<img data-open="${f.id}" src="${esc(f.image_url)}" alt="${esc(f.title)}">` : `<div class="ph" data-open="${f.id}">${svg('req')}</div>`}</div>
+    <div class="fb"><span class="kicker">${svg('star')}Uitgelicht</span><h3>${esc(f.title)}</h3>${f.description ? `<p>${esc(f.description)}</p>` : ''}
+    ${pills.length ? `<div class="pills">${pills.map(x => `<span>${svg(x[0])}${esc(x[1])}</span>`).join('')}</div>` : ''}
+    <button class="btn acc" data-open="${f.id}">Bekijk details</button></div></section>`;
+}
+
+function stats() {
+  const h = projects.reduce((s, p) => s + (+p.print_hours || 0), 0), g = projects.reduce((s, p) => s + (+p.grams || 0), 0);
+  const t = (k, v, l) => `<div class="tile">${svg(k)}<b>${v}</b><span>${l}</span></div>`;
+  return `<div class="tiles">${t('req', projects.length, 'prints')}${t('clock', Math.round(h), 'uur geprint')}${t('fil', (g / 1000).toFixed(1), 'kilo filament')}</div>`;
+}
+
+function vPortfolio() {
+  const add = canAdd() ? `<details class="addbox"><summary>${svg('plus')}Nieuw item toevoegen</summary><form class="f" id="addf">
+    <label>Titel<input id="t" required></label><label>Beschrijving<textarea id="d" rows="2"></textarea></label>
+    <label>Categorie<select id="c">${CATS.slice(1).map(c => `<option>${c}</option>`).join('')}</select></label>
+    <label>Materiaal<input id="mt" placeholder="PLA zwart"></label><label>Labels (met komma's)<input id="tg" placeholder="PLA, cadeau"></label><label>Link naar het model<input id="ml" type="url" placeholder="https://…"></label><label>Printinstellingen<input id="ps" placeholder="0.2 mm, 15% vulling"></label><label>Status<select id="stt"><option value="live">Zichtbaar</option><option value="concept">Concept (verborgen)</option><option value="mislukt">Mislukt (verborgen)</option></select></label><label>Reden bij mislukt (optioneel)<input id="fr"></label>
+    <div class="rr"><label style="flex:1">Printtijd (uur)<input id="ph" type="number" step="0.1" min="0"></label>
+    <label style="flex:1">Gewicht (gram)<input id="gr" type="number" min="0"></label></div>
+    <label>Foto's (max 6)<input id="img" type="file" accept="image/*" multiple></label><button class="btn acc">Plaatsen</button></form></details>` : '';
+  const hero = `<section class="hero"><div><span class="kicker">${svg('layers')}Hobbyproject</span><h1>Laag voor laag<br>tot iets moois.</h1>
+    <p>Een hobby uit liefde voor 3D-printen: bekijk wat er recent is geprint, bewaar je favorieten en vraag gerust of ik iets voor je kan printen.</p>
+    <div class="hero-b"><button class="btn acc" id="hq">${user ? 'Iets laten printen' : 'Inloggen om te vragen'}</button><button class="btn ghost-l" id="hs">Bekijk portfolio</button></div></div>${stats()}</section>`;
+  const top = cat === 'Alle' ? hero + feat()
+    : pageHead('tag', esc(cat), projects.filter(p => p.category === cat).length + ' prints in deze categorie');
+  $('#view').innerHTML = `${top}${add}
+    <div class="sec"><h2>${cat === 'Alle' ? 'Recent gemaakt' : 'Alle ' + esc(cat.toLowerCase())}</h2><span id="ri"></span></div>
+    <div class="toolbar"><div class="search">${svg('search')}<input id="q" type="search" placeholder="Zoek op naam, materiaal…" value="${esc(q)}" aria-label="Zoeken"></div>
+    <select id="so" aria-label="Sorteren"><option value="new">Nieuwste</option><option value="old">Oudste</option><option value="az">A–Z</option><option value="pop">Populairst</option></select><button class="btn ghost" id="vw" title="Weergave (g)">${svg('layers')}</button></div>
+    <div class="grid" id="grid"></div>`;
+  $('#so').value = sort;
+  $('#q').oninput = e => { q = e.target.value; drawGrid(); };
+  $('#so').onchange = e => { sort = e.target.value; drawGrid(); };
+  $('#vw').onclick = () => { listView = !listView; drawGrid(); };
+  $('#hq')?.addEventListener('click', () => { if (user) { tab = 'req'; render(); window.scrollTo(0, 0); } else $('#dlg').showModal(); });
+  $('#hs')?.addEventListener('click', () => $('#grid').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  drawGrid();
+  $('#addf')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button.acc'); btn.disabled = true;
+    const urls = [];
+    for (const [n, f] of [...$('#img').files].slice(0, 6).entries()) {
+      const path = `${user.id}/${Date.now()}-${n}-${f.name.replace(/[^\w.-]/g, '_')}`;
+      const up = await sb.storage.from('portfolio').upload(path, f);
+      if (up.error) { btn.disabled = false; return toast(up.error.message); }
+      urls.push(sb.storage.from('portfolio').getPublicUrl(path).data.publicUrl);
+    }
+    const { error } = await sb.from('projects').insert({ title: $('#t').value, description: $('#d').value, image_url: urls[0] || null, images: urls,
+      category: $('#c').value, tags: $('#tg').value.split(',').map(x => x.trim()).filter(Boolean), model_url: $('#ml').value || null, settings: $('#ps').value || null, status: $('#stt').value, fail_reason: $('#fr').value || null, material: $('#mt').value || null, print_hours: +$('#ph').value || null, grams: +$('#gr').value || null });
+    error ? (toast(error.message), btn.disabled = false) : (logAct('Print geplaatst: ' + $('#t').value), toast('Geplaatst'), load());
+  });
+}
+
+function vFavs() {
+  const l = projects.filter(p => favs.has(p.id));
+  $('#view').innerHTML = pageHead('favs', 'Jouw favorieten', l.length + (l.length === 1 ? ' print bewaard' : ' prints bewaard')) + (l.length
+    ? `<div class="grid">${l.map(card).join('')}</div>` : emptyBox('favs', 'Nog geen favorieten', 'Tik op het hartje bij een item om het hier te bewaren.'));
+  bindCards();
+}
+
+async function vMsg() {
+  const { data = [] } = await sb.from('messages').select('*').eq('from_user', user.id).order('created_at', { ascending: false });
+  $('#view').innerHTML = pageHead('msg', 'Bericht aan Sven', 'Stel een vraag of laat iets weten.') + `<form class="f" id="mf">
+    <label>Je bericht<textarea id="mb" rows="4" required></textarea></label><button class="btn acc">Versturen</button></form>
+    <h3 class="subh">Jouw berichten</h3>` + (data.length ? data.map(m => `<div class="chat"><div class="bub me"><small>${fmt(m.created_at)}</small><div>${esc(m.body)}</div></div>
+    ${m.reply ? `<div class="bub them"><small>Sven · ${fmt(m.replied_at)}</small><div>${esc(m.reply)}</div></div>` : '<small class="wait">Nog geen antwoord</small>'}</div>`).join('')
+    : emptyBox('msg', 'Nog niets verstuurd', 'Je berichten en de antwoorden van Sven verschijnen hier.'));
+  $('#mf').onsubmit = async e => {
+    e.preventDefault();
+    const { error } = await sb.from('messages').insert({ body: $('#mb').value, from_name: me?.name || user.email });
+    error ? toast(error.message) : (toast('Verstuurd'), vMsg());
+  };
+}
+
+async function vFil() {
+  const { data: all = [] } = await sb.from('filaments').select('*');
+  const data = all.filter(x => !x.archived);
+  const { data: lg = [] } = (await sb.from('filament_log').select('*').order('created_at', { ascending: false }).limit(50)) || {};
+  const pc = r => r.meters_left / r.meters_total;
+  data.sort((a, b) => pc(a) - pc(b));
+  const low = data.filter(isLow).length, tot = data.reduce((s, r) => s + +r.meters_left, 0);
+  const t = (k, v, l) => `<div class="tile">${svg(k)}<b>${v}</b><span>${l}</span></div>`;
+  $('#view').innerHTML = pageHead('fil', 'Filamentrollen', 'Houd bij wat er nog op de rol zit.') +
+    `<div class="tiles" style="margin-bottom:24px">${t('fil', data.length, 'rollen')}${t('scale', tot >= 1000 ? (tot / 1000).toFixed(1) + ' kg' : Math.round(tot) + ' g', 'filament over')}${t('alert', low, 'bijna leeg')}</div>` +
+  pctHtml() + lowHtml(data) +
+  (data.length ? data.map(r => {
+    const p = Math.max(0, Math.min(100, pc(r) * 100));
+    return `<div class="rollc"><span class="sw" style="background:${esc(r.color)}"></span>
+      <div><div class="top2"><div><b>${esc(r.name)}</b> <span style="color:var(--mute)">${esc(r.material || '')}</span>${isLow(r) ? ' <span class="st st-nieuw">bijna leeg</span>' : ''}</div><span class="pc">${Math.round(p)}%</span></div>
+      <div style="color:var(--mute);font-size:14px">${r.meters_left} / ${r.meters_total} gram · bijgewerkt ${fmt(r.updated_at)}${r.price ? ' · € ' + (r.price / r.meters_total).toFixed(3) + '/g' : ''}</div>
+      <div class="bar"><i class="${isLow(r) ? 'low' : ''}" style="width:${p}%"></i></div></div>
+      <div class="rr"><input type="number" min="0" value="${r.meters_left}" data-m="${r.id}" aria-label="Gram over"><button class="btn sm" data-s="${r.id}">Zet op</button>
+      <input type="number" min="0" placeholder="gram gebruikt" data-u="${r.id}" aria-label="Gram gebruikt"><button class="btn ghost sm" data-a="${r.id}">Aftrekken</button>
+      <input data-why="${r.id}" placeholder="Reden (optioneel)" style="flex:1;min-width:140px;width:auto">
+      ${me.is_owner ? `<button class="btn ghost sm" data-x="${r.id}" aria-label="Verwijderen">${svg('trash')}</button>` : ''}</div></div>`;
+  }).join('') : emptyBox('fil', 'Nog geen rollen', 'Voeg hieronder de eerste toe.')) +
+  histHtml(lg || []) + `<details class="addbox" ${data.length ? '' : 'open'}><summary>${svg('plus')}Nieuwe rol</summary><form class="f" id="rf">
+    <label>Naam (merk + kleur)<input id="rn" required></label><label>Materiaal<input id="rm" placeholder="PLA, PETG…"></label>
+    <label>Kleur<input id="rc" type="color" value="#808080"></label>
+    <label>Gewicht van een volle rol (gram)<input id="rt" type="number" value="1000" min="1"></label>
+    <label>Prijs van de rol (€)<input id="rpr" type="number" step="0.01" min="0"></label><button class="btn acc">Rol toevoegen</button></form></details>`;
+  $('#pcs')?.addEventListener('change', async e => { const { error } = await sb.from('site_settings').upsert([{ key: 'fil_pct', value: e.target.value }]); error ? toast(error.message) : (toast('Grens opgeslagen'), load()); });
+  const save = async (id, v) => {
+    const r = data.find(x => x.id === id), nv = Math.max(0, v), why = (document.querySelector(`[data-why="${id}"]`)?.value || '').trim();
+    const { error } = await sb.from('filaments').update({ meters_left: nv, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) return toast(error.message);
+    const lg2 = await sb.from('filament_log').insert({ filament_id: id, filament_name: r.name, change: nv - r.meters_left, left_after: nv, reason: why || null });
+    toast(lg2.error ? 'Opgeslagen, maar de geschiedenistabel ontbreekt nog' : 'Opgeslagen'); vFil();
+  };
+  document.querySelectorAll('[data-s]').forEach(b => b.onclick = () => save(+b.dataset.s, +document.querySelector(`[data-m="${b.dataset.s}"]`).value));
+  document.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+    const u = +document.querySelector(`[data-u="${b.dataset.a}"]`).value;
+    if (u > 0) save(+b.dataset.a, data.find(r => r.id === +b.dataset.a).meters_left - u);
+  });
+  document.querySelectorAll('[data-x]').forEach(b => b.onclick = async () => {
+    if (confirm('Rol archiveren? De geschiedenis blijft bewaard.')) { await sb.from('filaments').update({ archived: true }).eq('id', +b.dataset.x); vFil(); }
+  });
+  $('#rf').onsubmit = async e => {
+    e.preventDefault();
+    const t = +$('#rt').value;
+    const { error } = await sb.from('filaments').insert({ name: $('#rn').value, material: $('#rm').value, color: $('#rc').value, meters_total: t, meters_left: t, price: +$('#rpr').value || null });
+    error ? toast(error.message) : vFil();
+  };
+}
+
+async function vAdmin() {
+  const [{ data: ps = [] }, { data: ms = [] }] = await Promise.all([
+    sb.from('profiles').select('*').order('created_at'),
+    sb.from('messages').select('*').order('created_at', { ascending: false })]);
+  const { data: act = [] } = (await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(50)) || {};
+  $('#view').innerHTML = pageHead('admin', 'Beheer', 'Rechten, berichten en back-up') + `<div class="rr" style="margin-bottom:8px;flex-wrap:wrap"><button class="btn" onclick="exportData('json')">Back-up (JSON)</button><button class="btn ghost" onclick="exportData('csv')">Prints (CSV)</button><label class="btn ghost" style="cursor:pointer">Importeren<input type="file" accept=".json" hidden onchange="importData(this.files[0])"></label></div>` + `<form class="f" id="ff"><label>Uitgelicht item op het portfolio<select id="sx"><option value="">Geen</option>${projects.map(p => `<option value="${p.id}" ${String(p.id) === settings.featured ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label><label>Print van de week<select id="sw"><option value="">Geen</option>${projects.map(p => `<option value="${p.id}" ${String(p.id) === settings.week ? 'selected' : ''}>${esc(p.title)}</option>`).join('')}</select></label><button class="btn acc">Opslaan</button></form><h3 class="subh" style="margin-top:0">Wie mag wat?</h3><div class="tblw"><table><tr><th>Naam</th><th>Portfolio toevoegen</th><th>Filament-menu</th></tr>` +
+    ps.map(p => `<tr><td>${esc(p.name)}<br><small style="color:var(--mute)">${esc(p.email)}</small></td>
+      <td>${p.is_owner ? 'eigenaar' : `<input type="checkbox" style="width:auto" data-p="${p.id}" data-k="can_add" ${p.can_add ? 'checked' : ''}>`}</td>
+      <td>${p.is_owner ? 'eigenaar' : `<input type="checkbox" style="width:auto" data-p="${p.id}" data-k="can_filament" ${p.can_filament ? 'checked' : ''}>`}</td></tr>`).join('') +
+    `</table></div>${actHtml(act)}<h3 class="subh">Berichten</h3>` + (ms.length ? ms.map(m =>
+      `<div class="msg"><small>${esc(m.from_name)} · ${fmt(m.created_at)}${m.is_read ? '' : ' · <b style="color:var(--acc)">nieuw</b>'}</small><div>${esc(m.body)}</div>
+       ${m.reply ? `<div class="note"><small>Jouw antwoord</small>${esc(m.reply)}</div>` : ''}
+       <div class="rr" style="margin-top:10px;flex-wrap:wrap"><input data-r="${m.id}" placeholder="Antwoord schrijven…" list="qr" style="flex:1;width:auto;min-width:160px">
+       <button class="btn sm" data-rs="${m.id}">Antwoord</button>
+       ${m.is_read ? '' : `<button class="btn ghost sm" data-rd="${m.id}">Gelezen</button>`}
+       <button class="btn ghost sm" data-md="${m.id}">Verwijderen</button></div></div>`).join('') : emptyBox('msg', 'Geen berichten', 'Nieuwe berichten verschijnen hier.')) + '<datalist id="qr"><option value="Komt eraan!"><option value="Dat past helaas niet op mijn printer."><option value="Ik kom erop terug."></datalist>';
+  $('#ff').onsubmit = async e => { e.preventDefault(); const { error } = await sb.from('site_settings').upsert([{ key: 'featured', value: $('#sx').value }, { key: 'week', value: $('#sw').value }]); error ? toast(error.message) : (toast('Opgeslagen'), load()); };
+  document.querySelectorAll('[data-k]').forEach(c => c.onchange = async () => {
+    const { error } = await sb.from('profiles').update({ [c.dataset.k]: c.checked }).eq('id', c.dataset.p);
+    error ? toast(error.message) : toast('Rechten bijgewerkt');
+  });
+  document.querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
+    const t = document.querySelector(`[data-r="${b.dataset.rs}"]`).value.trim(); if (!t) return;
+    const { error } = await sb.from('messages').update({ reply: t, replied_at: new Date().toISOString(), is_read: true }).eq('id', +b.dataset.rs);
+    error ? toast(error.message) : (toast('Antwoord verstuurd'), load());
+  });
+  document.querySelectorAll('[data-rd]').forEach(b => b.onclick = async () => { await sb.from('messages').update({ is_read: true }).eq('id', +b.dataset.rd); load(); });
+  document.querySelectorAll('[data-md]').forEach(b => b.onclick = async () => { await sb.from('messages').delete().eq('id', +b.dataset.md); load(); });
+}
+
+const ST = ['nieuw', 'bezig', 'klaar', 'afgewezen'];
+async function vReq() {
+  const { data = [] } = await sb.from('requests').select('*').order('created_at', { ascending: false });
+  const own = me.is_owner;
+  const list = data.length ? data.map(r => `<div class="req"><div class="req-h"><b>${esc(r.title)}</b><span class="st st-${esc(r.status)}">${esc(r.status)}</span></div>
+    <small style="color:var(--mute)">${own ? esc(r.from_name) + ' · ' : ''}${fmt(r.created_at)}</small>
+    ${r.description ? `<p style="margin:8px 0 0">${esc(r.description)}</p>` : ''}
+    ${own ? `<div class="rr" style="margin-top:12px;flex-wrap:wrap"><select data-st="${r.id}" style="width:130px">${ST.map(x => `<option ${x === r.status ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <input data-n="${r.id}" value="${esc(r.owner_note)}" placeholder="Notitie of prijs…" style="flex:1;width:auto;min-width:160px">
+      <input type="date" data-eta="${r.id}" value="${r.eta || ''}" style="width:auto"><button class="btn sm" data-qs="${r.id}">Opslaan</button><button class="btn ghost sm" data-mk="${r.id}">Maak concept-print</button><button class="btn ghost sm" data-rx="${r.id}" aria-label="Verwijderen">${svg('trash')}</button></div>`
+    : `${r.eta ? `<small style="display:block;margin-top:8px">Verwacht klaar: ${fmt(r.eta)}</small>` : ''}${r.owner_note ? `<div class="note"><small>Antwoord van Sven</small>${esc(r.owner_note)}</div>` : ''}${r.status === 'nieuw' ? `<button class="btn ghost sm" style="margin-top:10px" data-rx="${r.id}">Intrekken</button>` : ''}`}</div>`).join('')
+    : emptyBox('req', 'Nog geen verzoeken', own ? 'Zodra iemand iets vraagt, zie je het hier.' : 'Wil je iets laten printen? Vul hierboven het formulier in.');
+  $('#view').innerHTML = pageHead('req', 'Printverzoeken', own ? 'Bekijk wat er binnenkomt.' : 'Vraag of Sven iets voor je kan printen.') + (own ? '' :
+    `<form class="f" id="qf"><p style="margin:0;color:var(--mute)">Wil je iets laten printen? Beschrijf wat je wilt (maat, kleur, aantal). Sven laat je weten of het kan. Dit is een hobby en geen webshop: er wordt niets via deze site betaald, eventuele afspraken over een bijdrage in de materiaalkosten maak je persoonlijk met Sven.</p>
+    <label>Wat wil je laten printen?<input id="qt" required></label><label>Details<textarea id="qd" rows="4"></textarea></label>
+    <button class="btn acc">Verzoek versturen</button></form><h3 class="subh">Jouw verzoeken</h3>`) + list;
+  $('#qf')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const { error } = await sb.from('requests').insert({ title: $('#qt').value, description: $('#qd').value, from_name: me?.name || user.email });
+    error ? toast(error.message) : (toast('Aanvraag verstuurd'), load());
+  });
+  document.querySelectorAll('[data-qs]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.qs;
+    const { error } = await sb.from('requests').update({ status: document.querySelector(`[data-st="${id}"]`).value, owner_note: document.querySelector(`[data-n="${id}"]`).value, eta: document.querySelector(`[data-eta="${id}"]`).value || null }).eq('id', +id);
+    error ? toast(error.message) : (toast('Opgeslagen'), load());
+  });
+  document.querySelectorAll('[data-mk]').forEach(b => b.onclick = async () => { const q2 = data.find(x => x.id === +b.dataset.mk); const { error } = await sb.from('projects').insert({ title: q2.title, description: q2.description, category: 'Overig', status: 'concept' }); error ? toast(error.message) : (toast('Concept-print gemaakt'), load()); });
+  document.querySelectorAll('[data-rx]').forEach(b => b.onclick = async () => {
+    if (confirm('Aanvraag verwijderen?')) { await sb.from('requests').delete().eq('id', +b.dataset.rx); load(); }
+  });
+}
+
+function vPrice() {
+  const f = (v, d) => v.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR', minimumFractionDigits: d, maximumFractionDigits: d });
+  const field = (id, label, val, step) => `<label>${label}<input id="${id}" type="number" min="0" step="${step}" inputmode="decimal" value="${val}"></label>`;
+  $('#view').innerHTML = pageHead('price', 'Kosten berekenen', 'Wat het materiaal van een print kost, direct uitgerekend.') + `<div class="calc"><form class="f" onsubmit="return false">
+    <p style="margin:0;color:var(--mute)">Vul de prijs en het gewicht van een rol in en hoeveel gram je print gebruikt.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${field('pp', 'Prijs van de rol (€)', 20, '0.01')}${field('pw', 'Gewicht van de rol (gram)', 1000, '1')}</div>
+    ${field('pg', 'Gram die je print gebruikt', '', '0.1')}${field('pe', 'Vermogen printer (watt)', 150, '1')}${field('ph2', 'Printtijd (uur)', '', '0.1')}${field('pk', 'Stroomprijs (€ per kWh)', 0.30, '0.01')}${field('pm', 'Extra voor slijtage (%)', 0, '1')}
+    <div class="rr"><select id="psv" style="flex:1;width:auto"><option value="">Opslaan bij print…</option>${projects.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('')}</select><button type="button" class="btn ghost" id="psb">Kosten opslaan</button></div>
+    <div class="rr"><input id="tm" type="number" min="1" placeholder="Timer (minuten)" style="flex:1;width:auto"><button type="button" class="btn ghost" id="tb">Start timer</button><b id="td"></b></div></form>
+    <div class="result" id="pr"></div></div>`;
+  let lastTotal = 0;
+  const calc = () => {
+    const n = id => +$('#' + id).value || 0;
+    const ppg = n('pw') ? n('pp') / n('pw') : 0, cost = ppg * n('pg'), elec = n('pe') * n('ph2') / 1000 * n('pk'), total = (cost + elec) * (1 + n('pm') / 100); lastTotal = total;
+    $('#pr').innerHTML = `<span class="kicker">Totale kosten</span><div class="big">${f(total, 2)}</div>
+      <div class="rs"><div><small>Prijs per gram</small><b>${f(ppg, 3)}</b></div><div><small>Materiaalkosten</small><b>${f(cost, 2)}</b></div><div><small>Stroom</small><b>${f(elec, 2)}</b></div>
+      ${n('pm') ? `<div><small>Slijtage</small><b>${f(total - cost - elec, 2)}</b></div>` : ''}</div>`;
+  };
+  ['pp', 'pw', 'pg', 'pm', 'pe', 'ph2', 'pk'].forEach(id => $('#' + id).oninput = calc);
+  calc();
+  $('#psb').onclick = async () => { const id = +$('#psv').value; if (!id) return toast('Kies eerst een print'); const { error } = await sb.from('projects').update({ cost: +lastTotal.toFixed(2) }).eq('id', id); error ? toast(error.message) : toast('Kosten opgeslagen'); };
+  $('#tb').onclick = () => { clearInterval(window._t); let t = Math.round(+$('#tm').value * 60); if (!t) return; window._t = setInterval(() => { t--; $('#td').textContent = Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); if (t <= 0) { clearInterval(window._t); $('#td').textContent = 'Klaar!'; toast('Print-timer klaar'); document.title = '✅ Print klaar'; } }, 1000); };
+}
+
+function vDash() {
+  const mo = {}; projects.forEach(p => { const k = p.created_at.slice(0, 7); (mo[k] ||= { n: 0 }).n++; });
+  const keys = Object.keys(mo).sort().slice(-12), max = Math.max(1, ...keys.map(k => mo[k].n));
+  const cats = CATS.slice(1).map(c => [c, projects.filter(p => p.category === c).length]).sort((a, b) => b[1] - a[1]), cm = Math.max(1, cats[0][1]);
+  const top = [...projects].filter(p => counts[p.id]).sort((a, b) => counts[b.id] - counts[a.id]).slice(0, 5);
+  const rec = (f, l, u) => { const p = [...projects].sort((a, b) => (+b[f] || 0) - (+a[f] || 0))[0]; return p && p[f] ? `<div class="tile">${svg('star')}<b>${p[f]} ${u}</b><span>${l}: ${esc(p.title)}</span></div>` : ''; };
+  let goal = 100; try { goal = +localStorage.getItem('goal') || 100; } catch (e) {}
+  const yr = projects.filter(p => p.created_at.startsWith(new Date().getFullYear())).length, pc = Math.min(100, yr / goal * 100);
+  $('#view').innerHTML = pageHead('dash', 'Statistieken', 'Je prints in cijfers') + stats() +
+    `<h3 class="subh">Prints per maand</h3>` + (keys.length ? `<div class="bars">${keys.map(k => `<div class="bc"><i style="height:${mo[k].n / max * 85}%"><b>${mo[k].n}</b></i><span>${k.slice(5)}/${k.slice(2, 4)}</span></div>`).join('')}</div>` : emptyBox('dash', 'Nog geen data', 'Plaats je eerste print.')) +
+    `<h3 class="subh">Records</h3><div class="tiles">${rec('print_hours', 'Langste print', 'u')}${rec('grams', 'Zwaarste print', 'g')}</div>` +
+    `<h3 class="subh">Doel dit jaar: ${yr} van ${goal} prints</h3><div class="bar" style="height:12px"><i style="width:${pc}%"></i></div><div class="rr" style="margin-top:10px"><input id="gl" type="number" min="1" value="${goal}"><button class="btn ghost sm" id="gs">Doel opslaan</button></div>` +
+    `<h3 class="subh">Categorieën</h3>${cats.map(c => `<div class="hb"><span>${c[0]}</span><div><i style="width:${c[1] / cm * 100}%"></i></div><b>${c[1]}</b></div>`).join('')}` +
+    `<h3 class="subh">Meeste favorieten</h3>` + (top.length ? top.map((p, i) => `<div class="hb" style="grid-template-columns:24px 1fr 30px"><b>${i + 1}</b><span data-open="${p.id}" style="cursor:pointer">${esc(p.title)}</span><b>${counts[p.id]}</b></div>`).join('') : '<p class="empty">Nog geen favorieten.</p>');
+  $('#gs').onclick = () => { try { localStorage.setItem('goal', $('#gl').value); } catch (e) {} vDash(); };
+  bindCards();
+}
+function editProject(id) {
+  const p = projects.find(x => x.id === id); if (!p) return;
+  $('#detc').innerHTML = `<form class="dbody f" id="ef" style="border:0;box-shadow:none;margin:0"><h2>Print bewerken</h2>
+    <label>Titel<input id="et" required value="${esc(p.title)}"></label><label>Beschrijving<textarea id="ed" rows="3">${esc(p.description)}</textarea></label>
+    <label>Categorie<select id="ec">${CATS.slice(1).map(c => `<option ${c === p.category ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
+    <label>Materiaal<input id="em" value="${esc(p.material)}"></label><label>Labels (met komma's)<input id="etg" value="${esc((p.tags || []).join(', '))}"></label><label>Link naar het model<input id="eml" type="url" value="${esc(p.model_url)}"></label><label>Printinstellingen<input id="eps" value="${esc(p.settings)}"></label><label>Status<select id="est"><option value="live" ${(p.status || 'live') === 'live' ? 'selected' : ''}>Zichtbaar</option><option value="concept" ${(p.status || 'live') === 'concept' ? 'selected' : ''}>Concept (verborgen)</option><option value="mislukt" ${(p.status || 'live') === 'mislukt' ? 'selected' : ''}>Mislukt (verborgen)</option></select></label><label>Reden bij mislukt (optioneel)<input id="efr" value="${esc(p.fail_reason)}"></label>
+    <div class="rr"><label style="flex:1">Printtijd (uur)<input id="eh" type="number" step="0.1" min="0" value="${p.print_hours ?? ''}"></label><label style="flex:1">Gewicht (gram)<input id="eg" type="number" min="0" value="${p.grams ?? ''}"></label></div>
+    <div class="dact"><button type="button" class="btn ghost" id="ecl">Annuleren</button><button class="btn acc">Opslaan</button></div></form>`;
+  $('#ecl').onclick = () => $('#det').close();
+  $('#ef').onsubmit = async e => { e.preventDefault(); const { error } = await sb.from('projects').update({ title: $('#et').value, description: $('#ed').value, category: $('#ec').value, tags: $('#etg').value.split(',').map(x => x.trim()).filter(Boolean), model_url: $('#eml').value || null, settings: $('#eps').value || null, status: $('#est').value, fail_reason: $('#efr').value || null, material: $('#em').value || null, print_hours: +$('#eh').value || null, grams: +$('#eg').value || null }).eq('id', id); if (error) return toast(error.message); logAct('Print bewerkt: ' + $('#et').value); $('#det').close(); toast('Opgeslagen'); load(); };
+  $('#det').showModal();
+}
+async function exportData(kind) {
+  const [f, rq, m] = await Promise.all(['filaments', 'requests', 'messages'].map(t => sb.from(t).select('*')));
+  const dl = (n, t, ty) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: ty })); a.download = n; a.click(); };
+  if (kind === 'json') dl('sven3dprint-backup.json', JSON.stringify({ prints: projects, filament: f.data || [], verzoeken: rq.data || [], berichten: m.data || [] }, null, 2), 'application/json');
+  else { const c = ['title', 'category', 'material', 'print_hours', 'grams', 'created_at', 'description']; dl('prints.csv', [c.join(';'), ...projects.map(p => c.map(k => '"' + String(p[k] ?? '').replace(/"/g, '""') + '"').join(';'))].join('\n'), 'text/csv'); }
+  toast('Gedownload');
+}
+document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || e.ctrlKey || e.metaKey) return;
+  if ($('#det').open && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return $(e.key === 'ArrowRight' ? '#dnx' : '#dpv')?.click();
+  if ($('#det').open || $('#dlg').open) return;
+  if (e.key === '/') { e.preventDefault(); if (tab !== 'portfolio') { tab = 'portfolio'; render(); } $('#q')?.focus(); }
+  if (e.key === 'g' && $('#vw')) $('#vw').click();
+  if (e.key === 'n' && canAdd()) { tab = 'portfolio'; render(); const d = document.querySelector('.addbox'); if (d) { d.open = true; d.scrollIntoView({ behavior: 'smooth' }); } }
+});
+$('#det').addEventListener('close', () => history.replaceState(null, '', location.pathname + location.search));
+
+async function importData(f) {
+  if (!f) return;
+  try {
+    const rows = (JSON.parse(await f.text()).prints || []).map(({ id, created_by, ...x }) => x);
+    if (!rows.length || !confirm(rows.length + ' prints importeren?')) return;
+    const { error } = await sb.from('projects').insert(rows);
+    error ? toast(error.message) : (toast('Geïmporteerd'), load());
+  } catch (e) { toast('Ongeldig bestand'); }
+}
+async function vListPage(tbl, key, title, sub, ph, prio) {
+  const again = () => vListPage(tbl, key, title, sub, ph, prio);
+  const { data = [] } = await sb.from(tbl).select('*').order('created_at', { ascending: false });
+  $('#view').innerHTML = pageHead(key, title, sub) + `<form class="f" id="lf"><div class="rr"><input id="lt" required placeholder="${ph}" style="flex:1;width:auto">${prio ? '<select id="lp" style="width:130px"><option>normaal</option><option>hoog</option><option>laag</option></select>' : ''}<button class="btn acc">Toevoegen</button></div></form>` +
+    (data.length ? data.map(x => `<div class="req"><div class="req-h"><span>${prio ? `<input type="checkbox" data-ck="${x.id}" ${x.done ? 'checked' : ''} style="width:auto"> ` : ''}<b ${x.done ? 'style="text-decoration:line-through;opacity:.6"' : ''}>${esc(x.title)}</b></span>
+      <span>${prio ? `<span class="st st-${x.prio === 'hoog' ? 'nieuw' : 'afgewezen'}">${esc(x.prio)}</span> ` : `<small>${fmt(x.created_at)}</small> `}<button class="btn ghost sm" data-dx="${x.id}" aria-label="Verwijderen">${svg('trash')}</button></span></div></div>`).join('') : emptyBox(key, 'Nog niets', 'Voeg hierboven iets toe.'));
+  $('#lf').onsubmit = async e => { e.preventDefault(); const row = { title: $('#lt').value }; if (prio) row.prio = $('#lp').value; const { error } = await sb.from(tbl).insert(row); error ? toast(error.message) : again(); };
+  document.querySelectorAll('[data-dx]').forEach(b => b.onclick = async () => { await sb.from(tbl).delete().eq('id', +b.dataset.dx); again(); });
+  document.querySelectorAll('[data-ck]').forEach(c => c.onchange = async () => { await sb.from(tbl).update({ done: c.checked }).eq('id', +c.dataset.ck); again(); });
+}
+const vWish = () => vListPage('wishlist', 'wish', 'Nog te printen', 'Ideeën en wat er nog op de lijst staat', 'Wat wil je nog printen?', true);
+const vMaint = () => vListPage('printer_log', 'maint', 'Printeronderhoud', 'Nozzle vervangen, smeren, bed waterpas…', 'Wat is er gedaan?', false);
+
+const logAct = a => { if (user) sb.from('activity_log').insert({ who: me?.name || user.email, action: a }).then(() => {}); };
+const actHtml = a => `<h3 class="subh">Activiteit</h3>` + (a.length ? `<div class="tblw"><table><tr><th>Wanneer</th><th>Wie</th><th>Actie</th></tr>${a.map(x => `<tr><td>${new Date(x.created_at).toLocaleString('nl-NL')}</td><td>${esc(x.who)}</td><td>${esc(x.action)}</td></tr>`).join('')}</table></div>` : '<p class="empty">Nog geen activiteit.</p>');
+const TOUR = [['Welkom! 👋', 'Even een korte rondleiding door de site.'], ['Het menu', 'Links vind je alle pagina’s en categorieën. Klik op een categorie om te filteren.'], ['Favorieten', 'Tik op het hartje bij een print om hem te bewaren.'], ['Reageren en verzamelen', 'Open een print om te reageren, hem te delen of in je eigen verzameling te zetten.'], ['Iets laten printen', 'Via Printverzoeken vraag je of Sven iets voor je kan printen.']];
+function tour(i = 0) {
+  const d = $('#tour');
+  d.innerHTML = `<h2 style="font-size:22px;margin:0 0 8px">${TOUR[i][0]}</h2><p style="color:var(--mute)">${TOUR[i][1]}</p><div class="rr" style="justify-content:space-between"><small>${i + 1} van ${TOUR.length}</small><span><button class="btn ghost sm" id="tk">Overslaan</button> <button class="btn acc sm" id="tn">${i < TOUR.length - 1 ? 'Volgende' : 'Klaar'}</button></span></div>`;
+  if (!d.open) d.showModal();
+  const end = () => { d.close(); try { if (user) localStorage.setItem('tour-' + user.id, '1'); } catch (e) {} };
+  $('#tk').onclick = end; $('#tn').onclick = () => i < TOUR.length - 1 ? tour(i + 1) : end();
+}
+async function loadExtras(id) {
+  const cm = (await sb.from('comments').select('*').eq('project_id', id).order('created_at')).data || [];
+  const box = $('#cm'); if (!box || curId !== id) return;
+  box.innerHTML = `<h3 class="subh">Reacties (${cm.length})</h3>` + cm.map(c => `<div class="msg"><small>${esc(c.author)} · ${fmt(c.created_at)}</small><div>${esc(c.body)}</div>${user && (c.user_id === user.id || me?.is_owner) ? `<button class="btn ghost sm" data-cx="${c.id}" style="margin-top:6px">Verwijderen</button>` : ''}</div>`).join('') +
+    (user ? `<div class="rr" style="margin-top:8px"><input id="cb" placeholder="Schrijf een reactie…" style="flex:1;width:auto"><button class="btn acc sm" id="cs">Plaatsen</button></div>` : '<p class="empty" style="padding:8px 0">Log in om te reageren.</p>');
+  $('#cs')?.addEventListener('click', async () => { const b = $('#cb').value.trim(); if (!b) return; const { error } = await sb.from('comments').insert({ project_id: id, author: me?.name || user.email, body: b }); if (error) return toast(error.message); logAct('Reactie bij print ' + id); loadExtras(id); });
+  document.querySelectorAll('[data-cx]').forEach(x => x.onclick = async () => { await sb.from('comments').delete().eq('id', +x.dataset.cx); loadExtras(id); });
+  if (!user) return;
+  const [{ data: cs = [] }, { data: it = [] }] = await Promise.all([sb.from('collections').select('*').order('created_at'), sb.from('collection_items').select('*').eq('project_id', id)]);
+  const cb = $('#colbox'); if (!cb || curId !== id) return;
+  cb.innerHTML = `<h3 class="subh">Mijn verzamelingen</h3><div class="chips">${cs.map(c => `<button class="chip ${it.some(x => x.collection_id === c.id) ? 'on' : ''}" data-cc="${c.id}">${esc(c.name)}</button>`).join('')}<button class="chip" id="cnew">＋ Nieuw</button></div>`;
+  document.querySelectorAll('[data-cc]').forEach(b => b.onclick = async () => { const cid = +b.dataset.cc; it.some(x => x.collection_id === cid) ? await sb.from('collection_items').delete().eq('collection_id', cid).eq('project_id', id) : await sb.from('collection_items').insert({ collection_id: cid, project_id: id }); loadExtras(id); });
+  $('#cnew').onclick = async () => { const n = prompt('Naam van de verzameling?'); if (!n) return; const { data: c } = await sb.from('collections').insert({ name: n }).select().single(); if (c) await sb.from('collection_items').insert({ collection_id: c.id, project_id: id }); loadExtras(id); };
+}
+async function vCol() {
+  const [{ data: cs = [] }, { data: it = [] }] = await Promise.all([sb.from('collections').select('*').order('created_at'), sb.from('collection_items').select('*')]);
+  $('#view').innerHTML = pageHead('col', 'Mijn verzamelingen', 'Groepeer prints die je mooi vindt') + `<form class="f" id="cf"><div class="rr"><input id="cn" required placeholder="Naam, bijvoorbeeld Cadeau-ideeën" style="flex:1;width:auto"><button class="btn acc">Maken</button></div></form>` +
+    (cs.length ? cs.map(c => { const l = projects.filter(p => it.some(x => x.collection_id === c.id && x.project_id === p.id)); return `<div class="sec"><h2>${esc(c.name)}</h2><button class="btn ghost sm" data-cd="${c.id}">${svg('trash')}</button></div>` + (l.length ? `<div class="grid" style="margin-bottom:28px">${l.map(card).join('')}</div>` : '<p class="empty">Nog leeg. Voeg prints toe via het detailvenster.</p>'); }).join('') : emptyBox('col', 'Nog geen verzamelingen', 'Maak er hierboven een.'));
+  bindCards();
+  $('#cf').onsubmit = async e => { e.preventDefault(); const { error } = await sb.from('collections').insert({ name: $('#cn').value }); error ? toast(error.message) : vCol(); };
+  document.querySelectorAll('[data-cd]').forEach(b => b.onclick = async () => { if (confirm('Verzameling verwijderen?')) { await sb.from('collections').delete().eq('id', +b.dataset.cd); vCol(); } });
+}
+
+function render() {
+  try { sessionStorage.removeItem('herstart'); } catch (e) {}
+  const ok = { portfolio: 1, dash: 1, price: canFil(), favs: !!user, msg: !!user, req: !!user, fil: canFil(), wish: canFil(), col: !!user, maint: canFil(), admin: me?.is_owner };
+  if (!ok[tab]) tab = 'portfolio';
+  nav(); bar();
+  ({ portfolio: vPortfolio, dash: vDash, price: vPrice, favs: vFavs, req: vReq, msg: vMsg, fil: vFil, wish: vWish, col: vCol, maint: vMaint, admin: vAdmin })[tab]();
+}
+
+// Inloggen / registreren
+let reg = false;
+const setMode = r => { reg = r; $('#atitle').textContent = r ? 'Account maken' : 'Inloggen'; $('#asub').textContent = r ? 'Registreren' : 'Inloggen';
+  $('#aswap').textContent = r ? 'Al een account? Inloggen' : 'Nog geen account? Registreren'; $('#nm').hidden = !r; };
+$('#aswap').onclick = () => setMode(!reg);
+$('#aclose').onclick = () => $('#dlg').close();
+$('#auth').onsubmit = async e => {
+  e.preventDefault();
+  const email = $('#email').value, password = $('#pw').value;
+  const { error, data } = reg
+    ? await sb.auth.signUp({ email, password, options: { data: { name: $('#name').value }, emailRedirectTo: location.origin + location.pathname } })
+    : await sb.auth.signInWithPassword({ email, password });
+  if (error) return toast(error.message);
+  if (reg && !data.session) toast('Check je e-mail om je account te bevestigen');
+  $('#dlg').close();
+};
+load().then(() => { const m = location.hash.match(/^#print-(\d+)/); if (m) openDetail(+m[1]); });
+window.addEventListener('unhandledrejection', e => {
+  if (!document.querySelector('#nav button')) $('#view').innerHTML = `<div class="notice"><b>Er ging iets mis.</b><br>${esc(e.reason?.message || e.reason)}</div>`;
+});
+setTimeout(() => {
+  if (document.querySelector('#nav button') || !$('#view').textContent.includes('Laden')) return;
+  let again = null;
+  try { again = sessionStorage.getItem('herstart'); sessionStorage.setItem('herstart', '1'); } catch (e) {}
+  if (!again) {
+    try { Object.keys(localStorage).filter(k => k.startsWith('sb-') || k.startsWith('sven3dprint')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    return location.reload();
+  }
+  $('#view').innerHTML = '<div class="notice"><b>De site blijft hangen bij het laden.</b><br>Zet Brave Shields uit voor deze site (leeuwtje rechts in de adresbalk) en druk op Ctrl+Shift+R. Blijft het hangen, stuur dan een screenshot van F12 > Console.</div>';
+}, 8000);
+</script>
+</body>
+</html>
